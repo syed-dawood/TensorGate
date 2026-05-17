@@ -3,6 +3,14 @@ name: Docs Quality
 on:
   pull_request:
     branches: [main]
+    paths:
+      - '**/*.md'
+      - '.markdownlint.jsonc'
+      - '.lycheeignore'
+
+concurrency:
+  group: docs-quality-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 permissions:
   contents: read

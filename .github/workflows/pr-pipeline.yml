@@ -2,9 +2,13 @@ name: PR Pipeline
 
 on:
   pull_request_target:
-    types: [opened, reopened, edited, synchronize, ready_for_review]
+    types: [opened, reopened, ready_for_review]
   pull_request:
     types: [closed]
+
+concurrency:
+  group: pr-pipeline-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -30,7 +34,10 @@ jobs:
           configuration_path: ".github/pr-size-labeler.yml"
 
   review-and-qa-plan:
-    if: ${{ github.event_name == 'pull_request_target' }}
+    if: >-
+      github.event_name == 'pull_request_target'
+      && github.actor != 'dependabot[bot]'
+      && !startsWith(github.head_ref, 'dependabot/')
     runs-on: ubuntu-latest
     steps:
       - name: Build review and QA plan
@@ -153,7 +160,10 @@ jobs:
             }
 
   pr-trace-matrix:
-    if: ${{ github.event_name == 'pull_request_target' }}
+    if: >-
+      github.event_name == 'pull_request_target'
+      && github.actor != 'dependabot[bot]'
+      && !startsWith(github.head_ref, 'dependabot/')
     runs-on: ubuntu-latest
     steps:
       - name: Build and post PR traceability matrix

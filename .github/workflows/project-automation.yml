@@ -3,9 +3,11 @@ name: Project Automation
 on:
   issues:
     types: [opened, reopened, edited, labeled, unlabeled]
-  pull_request_target:
-    types: [opened, reopened, synchronize]
   workflow_dispatch:
+
+concurrency:
+  group: project-automation-${{ github.event.issue.number || github.run_id }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -15,6 +17,7 @@ permissions:
 jobs:
   add_to_project:
     name: Add to TensorGate project
+    if: github.event_name == 'issues' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:

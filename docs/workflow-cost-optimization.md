@@ -32,6 +32,20 @@ These provide security depth without burning minutes on every push.
 
 These are short metadata workflows and are kept event-based.
 
+## Dependabot burst (why run counts spike)
+
+Each open Dependabot PR can trigger **6–8 workflows per push**. With many open deps PRs and `synchronize` events, total runs climb quickly (e.g. 1,000+).
+
+Mitigations in place:
+
+- **Single PR Gate trigger** (`pull_request` only — no duplicate `pull_request_target`)
+- **Project Automation** — issues only (not every PR push)
+- **PR Pipeline** — no `synchronize`; bot comment jobs skip Dependabot
+- **Docs Quality** — only when markdown changes
+- **Concurrency** — cancel superseded runs per PR
+
+To reduce open PR noise: merge grouped Dependabot PRs or enable broader `groups` in `.github/dependabot.yml`.
+
 ## Trigger Policy (implemented)
 
 - Removed `push` triggers from:

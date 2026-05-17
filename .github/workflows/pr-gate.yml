@@ -4,8 +4,10 @@ on:
   pull_request:
     types: [opened, edited, synchronize, reopened, ready_for_review]
     branches: [main]
-  pull_request_target:
-    types: [opened, edited, synchronize, reopened]
+
+concurrency:
+  group: pr-gate-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -13,7 +15,6 @@ permissions:
 
 jobs:
   branch-name:
-    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - name: Validate source branch naming convention
@@ -46,7 +47,6 @@ jobs:
 
   conventional-pr-title:
     name: Validate Conventional PR Title
-    if: github.event_name == 'pull_request_target'
     runs-on: ubuntu-latest
     steps:
       - name: Enforce conventional commit-style PR title
@@ -66,7 +66,9 @@ jobs:
           requireScope: false
 
   readiness:
-    if: github.event_name == 'pull_request'
+    if: >-
+      github.actor != 'dependabot[bot]'
+      && !startsWith(github.head_ref, 'dependabot/')
     runs-on: ubuntu-latest
     steps:
       - name: Validate PR metadata for human-authored changes
