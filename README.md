@@ -117,6 +117,8 @@ For Cursor-native agent/MCP execution strategy, see
 [Cursor Agent Ops](docs/cursor-agent-ops.md).
 For full lifecycle automation design, see
 [Phase 2 Intelligent Orchestration](docs/phase2-intelligent-orchestration.md).
+For robust local-first agentic shipping practices, see
+[Agentic Shipping Research and Playbook](docs/agentic-shipping-research-and-playbook.md).
 
 ## License
 

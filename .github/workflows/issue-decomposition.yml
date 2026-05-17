@@ -1,0 +1,173 @@
+name: Issue Decomposition
+
+on:
+  issues:
+    types: [opened, reopened]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  decompose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate decomposition plan
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            if (!issue) {
+              core.info("No issue payload available.");
+              return;
+            }
+
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const issueNumber = issue.number;
+
+            const labels = (issue.labels || [])
+              .map(l => typeof l === "string" ? l : l.name)
+              .filter(Boolean);
+            const labelSet = new Set(labels);
+
+            if (labelSet.has("skip-decomposition")) {
+              core.info("skip-decomposition label found; exiting.");
+              return;
+            }
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number: issueNumber,
+              per_page: 100
+            });
+
+            const marker = "### AI-Assisted Issue Decomposition";
+            const existing = comments.find(
+              c => c.user?.type === "Bot" && c.body?.includes(marker)
+            );
+            if (existing) {
+              core.info("Decomposition comment already exists; skipping duplicate.");
+              return;
+            }
+
+            const title = (issue.title || "").toLowerCase();
+            const body = (issue.body || "").toLowerCase();
+            const text = `${title}\n${body}`;
+
+            const has = (needle) => text.includes(needle);
+
+            const isBug = labelSet.has("bug") || has("[bug]") || has("error") || has("exception") || has("regression");
+            const isFeature = labelSet.has("type:feature") || has("[feature]") || has("feature");
+            const isBenchmark = labelSet.has("type:benchmark") || has("benchmark") || has("latency") || has("allocation");
+            const isResearch = labelSet.has("type:research") || has("research") || has("investigate");
+
+            const component = (() => {
+              if (labelSet.has("component:proxy")) return "proxy";
+              if (labelSet.has("component:tokenizer")) return "tokenizer";
+              if (labelSet.has("component:inference")) return "inference";
+              if (labelSet.has("component:memory")) return "memory";
+              if (labelSet.has("component:concurrency")) return "concurrency";
+              if (labelSet.has("component:validation")) return "validation";
+              if (labelSet.has("component:ci-cd")) return "ci";
+              return "general";
+            })();
+
+            const tasks = [];
+            const acceptance = [];
+            const risks = [];
+
+            // Core decomposition skeleton
+            tasks.push("- [ ] Clarify problem statement and expected outcome in one sentence.");
+            tasks.push("- [ ] Identify touched files/modules and bounded scope before coding.");
+            tasks.push("- [ ] Implement minimal change set aligned with acceptance criteria.");
+            tasks.push("- [ ] Add/adjust tests and update docs if behavior changes.");
+            tasks.push("- [ ] Run local preflight and validate all relevant CI checks.");
+
+            // Type-specific decomposition
+            if (isBug) {
+              tasks.push("- [ ] Reproduce with a failing test or deterministic reproduction steps.");
+              tasks.push("- [ ] Add root-cause note and regression test to prevent recurrence.");
+              acceptance.push("- [ ] Reproduction no longer fails with the fix applied.");
+              acceptance.push("- [ ] Regression test fails on old behavior and passes on new behavior.");
+              risks.push("- [ ] Hidden side effects in adjacent modules from bug-path assumptions.");
+            }
+            if (isFeature) {
+              tasks.push("- [ ] Define API/contract impact and backward-compatibility expectations.");
+              tasks.push("- [ ] Validate migration notes/examples for consumers.");
+              acceptance.push("- [ ] Feature behavior is documented with at least one usage example.");
+              acceptance.push("- [ ] Existing behavior remains intact unless explicitly marked breaking.");
+              risks.push("- [ ] Scope creep from under-specified edge cases.");
+            }
+            if (isBenchmark) {
+              tasks.push("- [ ] Capture baseline metrics before change (p50/p95/p99, allocations).");
+              tasks.push("- [ ] Re-run benchmarks after change and publish delta.");
+              acceptance.push("- [ ] Benchmark report includes baseline vs current and environment details.");
+              risks.push("- [ ] Misleading benchmark due to non-representative workload.");
+            }
+            if (isResearch) {
+              tasks.push("- [ ] Capture alternatives considered and decision rationale.");
+              acceptance.push("- [ ] Recommendation includes trade-offs and explicit next action.");
+              risks.push("- [ ] Decision bias from incomplete option scan.");
+            }
+
+            // Component-specific decomposition
+            if (component === "proxy") {
+              acceptance.push("- [ ] Request/response routing behavior is validated by integration tests.");
+              risks.push("- [ ] SSE or streaming behavior accidentally buffered or delayed.");
+            } else if (component === "tokenizer") {
+              acceptance.push("- [ ] Tokenization output verified against expected IDs for golden inputs.");
+              risks.push("- [ ] Hidden allocations in hot path via string/closure/LINQ usage.");
+            } else if (component === "inference") {
+              acceptance.push("- [ ] Inference path verified for correctness and deterministic resource disposal.");
+              risks.push("- [ ] Model/session lifecycle regressions under concurrency.");
+            } else if (component === "memory") {
+              acceptance.push("- [ ] Allocation profile remains at or near expected budget.");
+              risks.push("- [ ] Pool-return leak in exception paths.");
+            } else if (component === "concurrency") {
+              acceptance.push("- [ ] Concurrency stress path verified with no races/deadlocks.");
+              risks.push("- [ ] Rare race conditions not captured by light tests.");
+            } else if (component === "validation") {
+              acceptance.push("- [ ] Validation dataset path and score thresholds are reproducible.");
+              risks.push("- [ ] False confidence from insufficient adversarial coverage.");
+            } else if (component === "ci") {
+              acceptance.push("- [ ] Workflow changes validated by expected check execution outcomes.");
+              risks.push("- [ ] Permission/scope drift causing silent automation failures.");
+            } else {
+              acceptance.push("- [ ] Change is covered by at least one direct verification step.");
+              risks.push("- [ ] Missing edge-case validation.");
+            }
+
+            // Universal acceptance/risk
+            acceptance.push("- [ ] Local preflight passes (`./scripts/preflight.sh`).");
+            acceptance.push("- [ ] PR includes linked issue (`Closes #...` or `Relates to #...`).");
+            risks.push("- [ ] Test gap between local assumptions and CI environment.");
+            risks.push("- [ ] Incomplete rollback plan if regression appears after merge.");
+
+            const bodyOut = [
+              "### AI-Assisted Issue Decomposition",
+              "",
+              "> Automated planning scaffold. Maintainers should refine based on domain context.",
+              "",
+              "#### Suggested Sub-Tasks",
+              ...tasks,
+              "",
+              "#### Suggested Acceptance Criteria",
+              ...acceptance,
+              "",
+              "#### Risk Checklist (non-biased / critical)",
+              ...risks,
+              "",
+              "#### Reviewer Notes",
+              "- Confirm issue labels/sprint are correct for project routing.",
+              "- Keep implementation minimal and prove behavior with direct evidence.",
+            ].join("\n");
+
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: issueNumber,
+              body: bodyOut
+            });

@@ -19,6 +19,17 @@ Workflow: `.github/workflows/issue-intelligence.yml`
 - applies sprint heuristic (`sprint:1/2/3`)
 - posts a triage summary comment for transparency
 
+### Layer A2: Issue Decomposition
+
+Workflow: `.github/workflows/issue-decomposition.yml`
+
+- posts AI-assisted decomposition for new issues:
+  - suggested sub-tasks
+  - suggested acceptance criteria
+  - risk checklist
+- avoids duplicate decomposition comments
+- can be bypassed with `skip-decomposition` label
+
 ### Layer B: Project Routing
 
 Workflow: `.github/workflows/project-automation.yml`
@@ -55,6 +66,7 @@ Scripts:
 
 - `scripts/preflight.sh`: local quality gate mirror
 - `scripts/orchestrate-change.sh <issue-number>`: deterministic issue->branch->preflight->push->PR flow
+- `scripts/agentic-local-gate.sh`: strict local "ship-ready" gate before push
 
 ## Standard End-to-End Flow
 
