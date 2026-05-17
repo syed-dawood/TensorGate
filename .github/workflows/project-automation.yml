@@ -13,14 +13,15 @@ permissions:
   pull-requests: write
 
 jobs:
-  add-to-project:
+  add_to_project:
     name: Add to TensorGate project
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - uses: actions/add-to-project@v1.0.2
         with:
           project-url: https://github.com/users/syed-dawood/projects/1
-          github-token: ${{ github.token }}
+          github-token: ${{ secrets.TG_PROJECT_TOKEN }}
 
   infer_field_values:
     name: Infer field values from labels
@@ -35,7 +36,7 @@ jobs:
       - id: infer
         uses: actions/github-script@v7
         with:
-          github-token: ${{ github.token }}
+          github-token: ${{ secrets.TG_PROJECT_TOKEN }}
           script: |
             const issue = context.payload.issue;
             const pr = context.payload.pull_request;
@@ -87,12 +88,13 @@ jobs:
   set_status:
     name: Set project status Todo
     runs-on: ubuntu-latest
-    needs: [add-to-project, infer_field_values]
+    needs: [add_to_project, infer_field_values]
     if: ${{ needs.infer_field_values.outputs.content_id != '' }}
+    continue-on-error: true
     steps:
       - uses: github/update-project-action@v4
         with:
-          github_token: ${{ github.token }}
+          github_token: ${{ secrets.TG_PROJECT_TOKEN }}
           organization: syed-dawood
           project_number: 1
           content_id: ${{ needs.infer_field_values.outputs.content_id }}
@@ -102,12 +104,13 @@ jobs:
   set_sprint:
     name: Set sprint field
     runs-on: ubuntu-latest
-    needs: [add-to-project, infer_field_values]
+    needs: [add_to_project, infer_field_values]
     if: ${{ needs.infer_field_values.outputs.content_id != '' && needs.infer_field_values.outputs.sprint != '' }}
+    continue-on-error: true
     steps:
       - uses: github/update-project-action@v4
         with:
-          github_token: ${{ github.token }}
+          github_token: ${{ secrets.TG_PROJECT_TOKEN }}
           organization: syed-dawood
           project_number: 1
           content_id: ${{ needs.infer_field_values.outputs.content_id }}
@@ -117,12 +120,13 @@ jobs:
   set_priority:
     name: Set priority field
     runs-on: ubuntu-latest
-    needs: [add-to-project, infer_field_values]
+    needs: [add_to_project, infer_field_values]
     if: ${{ needs.infer_field_values.outputs.content_id != '' && needs.infer_field_values.outputs.priority != '' }}
+    continue-on-error: true
     steps:
       - uses: github/update-project-action@v4
         with:
-          github_token: ${{ github.token }}
+          github_token: ${{ secrets.TG_PROJECT_TOKEN }}
           organization: syed-dawood
           project_number: 1
           content_id: ${{ needs.infer_field_values.outputs.content_id }}
@@ -132,12 +136,13 @@ jobs:
   set_component:
     name: Set component field
     runs-on: ubuntu-latest
-    needs: [add-to-project, infer_field_values]
+    needs: [add_to_project, infer_field_values]
     if: ${{ needs.infer_field_values.outputs.content_id != '' && needs.infer_field_values.outputs.component != '' }}
+    continue-on-error: true
     steps:
       - uses: github/update-project-action@v4
         with:
-          github_token: ${{ github.token }}
+          github_token: ${{ secrets.TG_PROJECT_TOKEN }}
           organization: syed-dawood
           project_number: 1
           content_id: ${{ needs.infer_field_values.outputs.content_id }}
@@ -147,15 +152,41 @@ jobs:
   set_role:
     name: Set role field
     runs-on: ubuntu-latest
-    needs: [add-to-project, infer_field_values]
+    needs: [add_to_project, infer_field_values]
     if: ${{ needs.infer_field_values.outputs.content_id != '' && needs.infer_field_values.outputs.role != '' }}
+    continue-on-error: true
     steps:
       - uses: github/update-project-action@v4
         with:
-          github_token: ${{ github.token }}
+          github_token: ${{ secrets.TG_PROJECT_TOKEN }}
           organization: syed-dawood
           project_number: 1
           content_id: ${{ needs.infer_field_values.outputs.content_id }}
           field: Role
           value: ${{ needs.infer_field_values.outputs.role }}
+
+  sync_notice:
+    name: Project sync status notice
+    runs-on: ubuntu-latest
+    needs: [add_to_project, infer_field_values, set_status, set_sprint, set_priority, set_component, set_role]
+    if: ${{ github.event_name == 'issues' && (needs.add_to_project.result == 'failure' || needs.set_status.result == 'failure' || needs.set_sprint.result == 'failure' || needs.set_priority.result == 'failure' || needs.set_component.result == 'failure' || needs.set_role.result == 'failure') }}
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.TG_PROJECT_TOKEN }}
+          script: |
+            const issue = context.payload.issue;
+            if (!issue) return;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              body: [
+                "### Project Automation Notice",
+                "",
+                "Project field sync could not complete for this event.",
+                "Please ensure `TG_PROJECT_TOKEN` is a valid PAT with `repo` and `project` scopes.",
+                "Once updated, edit any label on this issue to re-trigger sync."
+              ].join("\\n")
+            });
 
