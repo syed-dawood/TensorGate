@@ -20,7 +20,7 @@ jobs:
       - uses: actions/add-to-project@v1.0.2
         with:
           project-url: https://github.com/users/syed-dawood/projects/1
-          github-token: ${{ secrets.TG_PROJECT_TOKEN }}
+          github-token: ${{ github.token }}
 
   infer_field_values:
     name: Infer field values from labels
@@ -35,7 +35,7 @@ jobs:
       - id: infer
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.TG_PROJECT_TOKEN }}
+          github-token: ${{ github.token }}
           script: |
             const issue = context.payload.issue;
             const pr = context.payload.pull_request;
@@ -92,7 +92,7 @@ jobs:
     steps:
       - uses: github/update-project-action@v4
         with:
-          github_token: ${{ secrets.TG_PROJECT_TOKEN }}
+          github_token: ${{ github.token }}
           organization: syed-dawood
           project_number: 1
           content_id: ${{ needs.infer_field_values.outputs.content_id }}
@@ -107,7 +107,7 @@ jobs:
     steps:
       - uses: github/update-project-action@v4
         with:
-          github_token: ${{ secrets.TG_PROJECT_TOKEN }}
+          github_token: ${{ github.token }}
           organization: syed-dawood
           project_number: 1
           content_id: ${{ needs.infer_field_values.outputs.content_id }}
@@ -122,7 +122,7 @@ jobs:
     steps:
       - uses: github/update-project-action@v4
         with:
-          github_token: ${{ secrets.TG_PROJECT_TOKEN }}
+          github_token: ${{ github.token }}
           organization: syed-dawood
           project_number: 1
           content_id: ${{ needs.infer_field_values.outputs.content_id }}
@@ -137,7 +137,7 @@ jobs:
     steps:
       - uses: github/update-project-action@v4
         with:
-          github_token: ${{ secrets.TG_PROJECT_TOKEN }}
+          github_token: ${{ github.token }}
           organization: syed-dawood
           project_number: 1
           content_id: ${{ needs.infer_field_values.outputs.content_id }}
@@ -152,7 +152,7 @@ jobs:
     steps:
       - uses: github/update-project-action@v4
         with:
-          github_token: ${{ secrets.TG_PROJECT_TOKEN }}
+          github_token: ${{ github.token }}
           organization: syed-dawood
           project_number: 1
           content_id: ${{ needs.infer_field_values.outputs.content_id }}
