@@ -1,0 +1,19 @@
+services:
+  mock-upstream:
+    build:
+      context: .
+      dockerfile: src/TensorGate.MockUpstream/Dockerfile
+    ports:
+      - "9090:8080"
+
+  tensorgate-proxy:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - mock-upstream
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ReverseProxy__Clusters__openai_compatible__Destinations__mock__Address: http://mock-upstream:8080/
+    ports:
+      - "8080:8080"

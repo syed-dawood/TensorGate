@@ -77,6 +77,16 @@ sub-50ms latency budget on pure CPU hardware.
 
 ## Project Status
 
+Sprint 1 scaffolding is in progress: the solution builds, YARP proxies `/v1/*` to a
+configurable OpenAI-compatible upstream, and `/health` is exposed for orchestration probes.
+
+```bash
+cd ~/TensorGate
+./scripts/setup-local-dev.sh
+./scripts/smoke-yarp.sh   # mock upstream on :9090, proxy on :8080
+dotnet run --project src/TensorGate.Proxy
+```
+
 This project is under active development following a structured sprint cadence:
 
 | Sprint | Focus | Duration |

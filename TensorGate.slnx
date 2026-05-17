@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/TensorGate.Core/TensorGate.Core.csproj" />
+    <Project Path="src/TensorGate.MockUpstream/TensorGate.MockUpstream.csproj" />
+    <Project Path="src/TensorGate.Proxy/TensorGate.Proxy.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/TensorGate.Tests/TensorGate.Tests.csproj" />
+  </Folder>
+</Solution>

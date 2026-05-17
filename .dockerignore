@@ -1,0 +1,8 @@
+**/.git
+**/.vs
+**/bin
+**/obj
+**/.artifacts
+**/TestResults
+**/*.md
+!README.md
