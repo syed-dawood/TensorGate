@@ -16,7 +16,7 @@ jobs:
     outputs:
       has_dotnet_workspace: ${{ steps.detect.outputs.has_dotnet_workspace }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Detect solution or project files
         id: detect
         run: |
@@ -37,7 +37,7 @@ jobs:
         language: ['csharp']
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
