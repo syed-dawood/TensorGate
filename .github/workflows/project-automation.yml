@@ -23,7 +23,7 @@ jobs:
           project-url: https://github.com/users/syed-dawood/projects/1
           github-token: ${{ secrets.TG_PROJECT_TOKEN }}
 
-  infer-field-values:
+  infer_field_values:
     name: Infer field values from labels
     runs-on: ubuntu-latest
     if: ${{ secrets.TG_PROJECT_TOKEN != '' }}
@@ -89,77 +89,77 @@ jobs:
   set-status:
     name: Set project status Todo
     runs-on: ubuntu-latest
-    needs: [add-to-project, infer-field-values]
-    if: ${{ needs.infer-field-values.outputs.content_id != '' && secrets.TG_PROJECT_TOKEN != '' }}
+    needs: [add-to-project, infer_field_values]
+    if: ${{ needs.infer_field_values.outputs.content_id != '' && secrets.TG_PROJECT_TOKEN != '' }}
     steps:
       - uses: github/update-project-action@v4
         with:
           github_token: ${{ secrets.TG_PROJECT_TOKEN }}
           organization: syed-dawood
           project_number: 1
-          content_id: ${{ needs.infer-field-values.outputs.content_id }}
+          content_id: ${{ needs.infer_field_values.outputs.content_id }}
           field: Status
           value: Todo
 
   set-sprint:
     name: Set sprint field
     runs-on: ubuntu-latest
-    needs: [add-to-project, infer-field-values]
-    if: ${{ needs.infer-field-values.outputs.content_id != '' && needs.infer-field-values.outputs.sprint != '' && secrets.TG_PROJECT_TOKEN != '' }}
+    needs: [add-to-project, infer_field_values]
+    if: ${{ needs.infer_field_values.outputs.content_id != '' && needs.infer_field_values.outputs.sprint != '' && secrets.TG_PROJECT_TOKEN != '' }}
     steps:
       - uses: github/update-project-action@v4
         with:
           github_token: ${{ secrets.TG_PROJECT_TOKEN }}
           organization: syed-dawood
           project_number: 1
-          content_id: ${{ needs.infer-field-values.outputs.content_id }}
+          content_id: ${{ needs.infer_field_values.outputs.content_id }}
           field: Sprint
-          value: ${{ needs.infer-field-values.outputs.sprint }}
+          value: ${{ needs.infer_field_values.outputs.sprint }}
 
   set-priority:
     name: Set priority field
     runs-on: ubuntu-latest
-    needs: [add-to-project, infer-field-values]
-    if: ${{ needs.infer-field-values.outputs.content_id != '' && needs.infer-field-values.outputs.priority != '' && secrets.TG_PROJECT_TOKEN != '' }}
+    needs: [add-to-project, infer_field_values]
+    if: ${{ needs.infer_field_values.outputs.content_id != '' && needs.infer_field_values.outputs.priority != '' && secrets.TG_PROJECT_TOKEN != '' }}
     steps:
       - uses: github/update-project-action@v4
         with:
           github_token: ${{ secrets.TG_PROJECT_TOKEN }}
           organization: syed-dawood
           project_number: 1
-          content_id: ${{ needs.infer-field-values.outputs.content_id }}
+          content_id: ${{ needs.infer_field_values.outputs.content_id }}
           field: Priority
-          value: ${{ needs.infer-field-values.outputs.priority }}
+          value: ${{ needs.infer_field_values.outputs.priority }}
 
   set-component:
     name: Set component field
     runs-on: ubuntu-latest
-    needs: [add-to-project, infer-field-values]
-    if: ${{ needs.infer-field-values.outputs.content_id != '' && needs.infer-field-values.outputs.component != '' && secrets.TG_PROJECT_TOKEN != '' }}
+    needs: [add-to-project, infer_field_values]
+    if: ${{ needs.infer_field_values.outputs.content_id != '' && needs.infer_field_values.outputs.component != '' && secrets.TG_PROJECT_TOKEN != '' }}
     steps:
       - uses: github/update-project-action@v4
         with:
           github_token: ${{ secrets.TG_PROJECT_TOKEN }}
           organization: syed-dawood
           project_number: 1
-          content_id: ${{ needs.infer-field-values.outputs.content_id }}
+          content_id: ${{ needs.infer_field_values.outputs.content_id }}
           field: Component
-          value: ${{ needs.infer-field-values.outputs.component }}
+          value: ${{ needs.infer_field_values.outputs.component }}
 
   set-role:
     name: Set role field
     runs-on: ubuntu-latest
-    needs: [add-to-project, infer-field-values]
-    if: ${{ needs.infer-field-values.outputs.content_id != '' && needs.infer-field-values.outputs.role != '' && secrets.TG_PROJECT_TOKEN != '' }}
+    needs: [add-to-project, infer_field_values]
+    if: ${{ needs.infer_field_values.outputs.content_id != '' && needs.infer_field_values.outputs.role != '' && secrets.TG_PROJECT_TOKEN != '' }}
     steps:
       - uses: github/update-project-action@v4
         with:
           github_token: ${{ secrets.TG_PROJECT_TOKEN }}
           organization: syed-dawood
           project_number: 1
-          content_id: ${{ needs.infer-field-values.outputs.content_id }}
+          content_id: ${{ needs.infer_field_values.outputs.content_id }}
           field: Role
-          value: ${{ needs.infer-field-values.outputs.role }}
+          value: ${{ needs.infer_field_values.outputs.role }}
 
   missing-project-token:
     name: Project token not configured
