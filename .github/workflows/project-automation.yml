@@ -57,12 +57,12 @@ jobs:
             const sprint = pick([
               ["sprint:1", "Sprint 1: Proxy Mechanics"],
               ["sprint:2", "Sprint 2: Inference Engines"],
-              ["sprint:3", "Sprint 3: Validation"],
+              ["sprint:3", "Sprint 3: Validation"]
             ]);
             const priority = pick([
               ["priority:critical", "Critical"],
               ["priority:high", "High"],
-              ["priority:medium", "Medium"],
+              ["priority:medium", "Medium"]
             ]);
             const component = pick([
               ["component:proxy", "Proxy (YARP)"],
@@ -71,13 +71,13 @@ jobs:
               ["component:concurrency", "Concurrency"],
               ["component:validation", "Validation"],
               ["component:memory", "Memory"],
-              ["component:ci-cd", "CI/CD"],
+              ["component:ci-cd", "CI/CD"]
             ]);
             const role = pick([
               ["role:migrator", "Migrator"],
               ["role:validator", "Validator"],
               ["role:tester", "Tester"],
-              ["role:orchestrator", "Orchestrator"],
+              ["role:orchestrator", "Orchestrator"]
             ]);
 
             core.setOutput("content_id", contentId);
@@ -86,7 +86,7 @@ jobs:
             core.setOutput("component", component);
             core.setOutput("role", role);
 
-  set-status:
+  set_status:
     name: Set project status Todo
     runs-on: ubuntu-latest
     needs: [add-to-project, infer_field_values]
@@ -101,7 +101,7 @@ jobs:
           field: Status
           value: Todo
 
-  set-sprint:
+  set_sprint:
     name: Set sprint field
     runs-on: ubuntu-latest
     needs: [add-to-project, infer_field_values]
@@ -116,7 +116,7 @@ jobs:
           field: Sprint
           value: ${{ needs.infer_field_values.outputs.sprint }}
 
-  set-priority:
+  set_priority:
     name: Set priority field
     runs-on: ubuntu-latest
     needs: [add-to-project, infer_field_values]
@@ -131,7 +131,7 @@ jobs:
           field: Priority
           value: ${{ needs.infer_field_values.outputs.priority }}
 
-  set-component:
+  set_component:
     name: Set component field
     runs-on: ubuntu-latest
     needs: [add-to-project, infer_field_values]
@@ -146,7 +146,7 @@ jobs:
           field: Component
           value: ${{ needs.infer_field_values.outputs.component }}
 
-  set-role:
+  set_role:
     name: Set role field
     runs-on: ubuntu-latest
     needs: [add-to-project, infer_field_values]
@@ -161,7 +161,7 @@ jobs:
           field: Role
           value: ${{ needs.infer_field_values.outputs.role }}
 
-  missing-project-token:
+  missing_project_token:
     name: Project token not configured
     runs-on: ubuntu-latest
     if: ${{ secrets.TG_PROJECT_TOKEN == '' }}
