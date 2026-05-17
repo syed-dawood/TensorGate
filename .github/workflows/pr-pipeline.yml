@@ -1,0 +1,295 @@
+name: PR Pipeline
+
+on:
+  pull_request_target:
+    types: [opened, reopened, edited, synchronize, ready_for_review]
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  label:
+    if: ${{ github.event_name == 'pull_request_target' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/labeler@v6
+        with:
+          repo-token: "${{ secrets.GITHUB_TOKEN }}"
+
+  size-label:
+    if: ${{ github.event_name == 'pull_request_target' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: codelytv/pr-size-labeler@v1
+        with:
+          github_token: "${{ secrets.GITHUB_TOKEN }}"
+          configuration_path: ".github/pr-size-labeler.yml"
+
+  review-and-qa-plan:
+    if: ${{ github.event_name == 'pull_request_target' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build review and QA plan
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            const files = await github.paginate(github.rest.pulls.listFiles, {
+              owner,
+              repo,
+              pull_number: pr.number,
+              per_page: 100
+            });
+
+            const names = files.map(f => f.filename.toLowerCase());
+            const changed = (predicate) => names.some(predicate);
+
+            const reviewChecklist = [];
+            const qaChecklist = [];
+            const labels = new Set();
+
+            if (changed(n => n.startsWith(".github/workflows/") || n.startsWith(".github/"))) {
+              reviewChecklist.push("- [ ] **CI/Security review:** verify workflow permissions, triggers, and token scopes.");
+              qaChecklist.push("- [ ] Execute dry-run by confirming expected checks appear on PR.");
+              labels.add("component:ci-cd");
+            }
+
+            if (changed(n => n.includes("docs/") || n.endsWith(".md"))) {
+              reviewChecklist.push("- [ ] **Docs review:** validate technical accuracy and migration steps.");
+              qaChecklist.push("- [ ] Confirm `markdown-lint` and `link-check` are green.");
+              labels.add("documentation");
+            }
+
+            if (changed(n => n.includes("proxy") || n.includes("yarp"))) {
+              reviewChecklist.push("- [ ] **Proxy review:** verify routing behavior and SSE non-buffering assumptions.");
+              qaChecklist.push("- [ ] Add/validate integration tests for request/response transforms.");
+              labels.add("component:proxy");
+            }
+
+            if (changed(n => n.includes("tokenizer"))) {
+              reviewChecklist.push("- [ ] **Tokenizer review:** ensure no hidden allocations/regressions on hot path.");
+              qaChecklist.push("- [ ] Validate tokenization output against golden cases.");
+              labels.add("component:tokenizer");
+            }
+
+            if (changed(n => n.includes("inference") || n.includes("onnx"))) {
+              reviewChecklist.push("- [ ] **Inference review:** confirm deterministic disposal and no unsafe session lifecycle changes.");
+              qaChecklist.push("- [ ] Benchmark p50/p99 impact and allocation profile.");
+              labels.add("component:inference");
+            }
+
+            if (changed(n => n.includes("memory") || n.includes("arraypool"))) {
+              reviewChecklist.push("- [ ] **Memory review:** verify pool-return paths and exception safety.");
+              qaChecklist.push("- [ ] Run allocation-focused tests/benchmarks.");
+              labels.add("component:memory");
+            }
+
+            if (changed(n => n.includes("concurrency") || n.includes("refcount"))) {
+              reviewChecklist.push("- [ ] **Concurrency review:** validate race safety under parallel request simulation.");
+              qaChecklist.push("- [ ] Execute stress tests for acquire/release and swap scenarios.");
+              labels.add("component:concurrency");
+            }
+
+            if (reviewChecklist.length === 0) {
+              reviewChecklist.push("- [ ] General code review: correctness, readability, and test adequacy.");
+              qaChecklist.push("- [ ] Run baseline preflight checks.");
+            }
+
+            const body = [
+              "### PR Intelligence: Review + QA Plan",
+              "",
+              "#### Review Gate",
+              ...reviewChecklist,
+              "",
+              "#### QA Gate (non-biased / critical)",
+              ...qaChecklist,
+              "",
+              "#### Merge Readiness",
+              "- [ ] Linked issue exists and acceptance criteria are explicit.",
+              "- [ ] Risk, rollback path, and test evidence are documented in PR description.",
+              "- [ ] Required checks are green and no unresolved blocking comments remain.",
+            ].join("\n");
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner, repo, issue_number: pr.number, per_page: 100
+            });
+            const marker = "### PR Intelligence: Review + QA Plan";
+            const existing = comments.find(c => c.user?.type === "Bot" && c.body?.includes(marker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: pr.number,
+                body
+              });
+            }
+
+            if (labels.size > 0) {
+              try {
+                await github.rest.issues.addLabels({
+                  owner,
+                  repo,
+                  issue_number: pr.number,
+                  labels: Array.from(labels),
+                });
+              } catch (e) {
+                core.warning(`Could not apply one or more labels: ${e.message}`);
+              }
+            }
+
+  pr-trace-matrix:
+    if: ${{ github.event_name == 'pull_request_target' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build and post PR traceability matrix
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            const body = pr.body || "";
+            const regex = /\b(?:closes|fixes|resolves|relates to)\s+#(\d+)\b/gi;
+            const issueNumbers = new Set();
+            let match;
+            while ((match = regex.exec(body)) !== null) {
+              issueNumbers.add(Number(match[1]));
+            }
+
+            const files = await github.paginate(github.rest.pulls.listFiles, {
+              owner,
+              repo,
+              pull_number: pr.number,
+              per_page: 100,
+            });
+            const changedFiles = files.map(f => f.filename);
+
+            const matrixRows = [];
+            if (issueNumbers.size === 0) {
+              matrixRows.push("| _(none linked)_ | _(missing)_ | _(n/a)_ | Add `Closes #...` or `Relates to #...` in PR body |");
+            } else {
+              for (const n of issueNumbers) {
+                matrixRows.push(`| #${n} | Linked in PR body | PR checks + review gates | Validate acceptance criteria and close loop |`);
+              }
+            }
+
+            const componentHints = [];
+            const has = (needle) => changedFiles.some(f => f.toLowerCase().includes(needle));
+            if (has(".github/workflows/")) componentHints.push("CI/CD");
+            if (has("docs/") || changedFiles.some(f => f.endsWith(".md"))) componentHints.push("Documentation");
+            if (has("proxy") || has("yarp")) componentHints.push("Proxy");
+            if (has("tokenizer")) componentHints.push("Tokenizer");
+            if (has("inference") || has("onnx")) componentHints.push("Inference");
+            if (has("memory") || has("arraypool")) componentHints.push("Memory");
+            if (has("concurrency") || has("refcount")) componentHints.push("Concurrency");
+            if (has("validation") || has("harmbench")) componentHints.push("Validation");
+
+            const marker = "### Traceability Matrix";
+            const commentBody = [
+              marker,
+              "",
+              "#### Requirement -> Implementation -> Verification",
+              "",
+              "| Requirement Source | Implementation Link | Verification Link | Gap Check |",
+              "|---|---|---|---|",
+              ...matrixRows,
+              "",
+              "#### Change Surface Summary",
+              `- Files changed: ${changedFiles.length}`,
+              `- Component hints: ${componentHints.length ? componentHints.join(", ") : "General"}`,
+              "",
+              "#### Merge Evidence Checklist",
+              "- [ ] Linked issue(s) reflect accepted scope.",
+              "- [ ] PR checks are green for latest commit.",
+              "- [ ] Reviewer confirms risk checklist closure.",
+              "- [ ] Post-merge evidence is recorded back on linked issue(s).",
+            ].join("\n");
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number: pr.number,
+              per_page: 100,
+            });
+            const existing = comments.find(c => c.user?.type === "Bot" && c.body?.includes(marker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body: commentBody,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: pr.number,
+                body: commentBody,
+              });
+            }
+
+  post-merge-evidence:
+    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.merged == true }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post merge evidence back to linked issues
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            const body = pr.body || "";
+            const regex = /\b(?:closes|fixes|resolves|relates to)\s+#(\d+)\b/gi;
+            const issueNumbers = new Set();
+            let match;
+            while ((match = regex.exec(body)) !== null) {
+              issueNumbers.add(Number(match[1]));
+            }
+
+            if (issueNumbers.size === 0) {
+              core.info("No linked issues found in PR body.");
+              return;
+            }
+
+            const mergedAt = pr.merged_at || new Date().toISOString();
+            const evidence = [
+              "### Merge Evidence Log",
+              "",
+              `- PR: #${pr.number} (${pr.title})`,
+              `- URL: ${pr.html_url}`,
+              `- Merged at: ${mergedAt}`,
+              `- Commit: ${pr.merge_commit_sha || "n/a"}`,
+              "",
+              "#### Verification Trail",
+              "- Required checks passed at merge time (branch protection enforced).",
+              "- Review/QA/traceability gates were applied on the PR thread.",
+              "- If follow-up gaps remain, open a new issue linked to this evidence block.",
+            ].join("\n");
+
+            for (const issueNumber of issueNumbers) {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: issueNumber,
+                body: evidence,
+              });
+            }

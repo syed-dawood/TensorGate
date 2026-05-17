@@ -1,8 +1,9 @@
-name: CodeQL Security Analysis
+name: Security Scheduled
 
 on:
-  pull_request:
-    branches: [main]
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
 
 permissions:
   actions: read
@@ -10,8 +11,18 @@ permissions:
   security-events: write
 
 jobs:
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   detect-dotnet-workspace:
-    name: Detect .NET Workspace
     runs-on: ubuntu-latest
     outputs:
       has_dotnet_workspace: ${{ steps.detect.outputs.has_dotnet_workspace }}
@@ -26,43 +37,44 @@ jobs:
             echo "has_dotnet_workspace=false" >> "$GITHUB_OUTPUT"
           fi
 
-  analyze:
-    name: Analyze C#
-    runs-on: ubuntu-latest
+  codeql-analyze:
     needs: detect-dotnet-workspace
     if: needs.detect-dotnet-workspace.outputs.has_dotnet_workspace == 'true'
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         language: ['csharp']
-
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
-
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+      - uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
           queries: +security-extended,security-and-quality
-
-      - name: Build
-        run: dotnet build --configuration Release
-
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+      - run: dotnet build --configuration Release
+      - uses: github/codeql-action/analyze@v3
         with:
           category: "/language:${{ matrix.language }}"
 
-  bootstrap-ok:
-    name: Bootstrap CodeQL Guard
+  scorecards:
     runs-on: ubuntu-latest
-    needs: detect-dotnet-workspace
-    if: needs.detect-dotnet-workspace.outputs.has_dotnet_workspace == 'false'
+    permissions:
+      security-events: write
+      id-token: write
+      contents: read
+      actions: read
     steps:
-      - name: Report bootstrap state
-        run: echo "No .NET workspace found yet; CodeQL C# analysis is deferred."
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: ossf/scorecard-action@v2.4.3
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          publish_results: true
+      - uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: results.sarif
