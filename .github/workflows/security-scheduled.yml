@@ -1,8 +1,7 @@
 name: Security Scheduled
 
+# COST FREEZE — scheduled runs disabled; run manually when needed.
 on:
-  schedule:
-    - cron: "0 6 * * 1"
   workflow_dispatch:
 
 permissions:

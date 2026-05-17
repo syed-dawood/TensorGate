@@ -1,70 +1,60 @@
 # Workflow Cost Optimization Policy
 
-This policy minimizes GitHub Actions minutes while preserving merge quality.
+## COST FREEZE (active)
 
-## Cost Strategy
+**All automatic Actions and Dependabot version updates are paused.**
+
+| What | State |
+|------|--------|
+| PR / issue workflows | `workflow_dispatch` only |
+| Scheduled security / stale | `workflow_dispatch` only |
+| Dependabot | `updates: []` (no new PRs) |
+| Tag release workflow | Still on tag push (disable before tagging if needed) |
+
+### Run checks manually
+
+```bash
+gh workflow run ci.yml --repo TensorGateLabs/TensorGate
+gh workflow run pr-gate.yml --repo TensorGateLabs/TensorGate
+```
+
+Or use **Actions → workflow → Run workflow** in GitHub.
+
+### Unfreeze
+
+1. Restore triggers in `.github/workflows/*.yml` (remove `COST FREEZE` blocks; see git history).
+2. Restore `.github/dependabot.yml` `updates` section (commented template at bottom of file).
+3. Re-enable branch protection required checks when PR CI is turned back on.
+
+---
+
+## Cost Strategy (when unfrozen)
 
 ### Tier 1 - Required per PR (fast, merge-blocking)
 
-- CI (bootstrap guard / build / test / format)
-- Branch Name Check
-- PR Title Check
-- Docs Quality
+- CI (build / test / format)
+- PR Gate (branch, title, readiness)
+- Docs Quality (markdown paths only)
 - Secret Scan (PR scope)
 
-These are the only checks that should gate merges.
+### Tier 2 - Manual / scheduled only
 
-### Tier 2 - Async/security depth (scheduled or manual)
+- CodeQL, Scorecards, SBOM, Security Scheduled, Stale
 
-- CodeQL (PR + weekly schedule)
-- OpenSSF Scorecards (weekly/manual)
-- SBOM generation (release/manual)
+### Tier 3 - Manual or issue-only (low runtime)
 
-These provide security depth without burning minutes on every push.
+- Issue Pipeline, Project Automation, PR Pipeline
 
-### Tier 3 - Planning automation (event-driven, low runtime)
+## Dependabot
 
-- Issue Intelligence
-- Issue Decomposition
-- PR Intelligence
-- Traceability Matrix
-- Project Automation
+Use grouped updates (`dotnet-minors`, `dotnet-majors`, `github-actions`) and low `open-pull-requests-limit` to avoid run explosions.
 
-These are short metadata workflows and are kept event-based.
-
-## Dependabot burst (why run counts spike)
-
-Each open Dependabot PR can trigger **6–8 workflows per push**. With many open deps PRs and `synchronize` events, total runs climb quickly (e.g. 1,000+).
-
-Mitigations in place:
-
-- **Single PR Gate trigger** (`pull_request` only — no duplicate `pull_request_target`)
-- **Project Automation** — issues only (not every PR push)
-- **PR Pipeline** — no `synchronize`; bot comment jobs skip Dependabot
-- **Docs Quality** — only when markdown changes
-- **Concurrency** — cancel superseded runs per PR
-
-To reduce open PR noise: merge grouped Dependabot PRs or enable broader `groups` in `.github/dependabot.yml`.
-
-## Trigger Policy (implemented)
-
-- Removed `push` triggers from:
-  - `ci.yml`
-  - `codeql.yml`
-  - `docs-quality.yml`
-  - `secrets-scan.yml`
-  - `release-drafter.yml`
-- Replaced `scorecards.yml` push trigger with `workflow_dispatch`.
-
-## Operational Recommendations
-
-1. Avoid direct pushes to `main`; use PR flow exclusively.
-2. Keep required checks stable by name.
-3. Run scheduled heavy scans during off-hours.
-4. Review monthly run volume:
+## Operational
 
 ```bash
-gh run list --repo TensorGateLabs/TensorGate --limit 200
+gh run list --repo TensorGateLabs/TensorGate --limit 50
+# Cancel active runs:
+for id in $(gh run list --repo TensorGateLabs/TensorGate --status in_progress --json databaseId -q '.[].databaseId'); do
+  gh run cancel "$id" --repo TensorGateLabs/TensorGate
+done
 ```
-
-5. If costs rise, trim first from Tier 2 frequency before touching Tier 1.

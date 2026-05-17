@@ -1,8 +1,7 @@
 name: Project Automation
 
+# COST FREEZE — automatic issue triggers disabled; run manually when needed.
 on:
-  issues:
-    types: [opened, reopened, edited, labeled, unlabeled]
   workflow_dispatch:
 
 concurrency:

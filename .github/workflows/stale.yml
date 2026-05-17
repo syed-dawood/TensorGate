@@ -1,8 +1,7 @@
 name: Stale Issues & PRs
 
+# COST FREEZE — scheduled runs disabled; run manually when needed.
 on:
-  schedule:
-    - cron: '0 0 * * *'
   workflow_dispatch:
 
 permissions:

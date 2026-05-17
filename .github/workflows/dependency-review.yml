@@ -1,15 +1,8 @@
 name: Dependency Review
 
+# COST FREEZE — automatic PR triggers disabled; run manually when needed.
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - '**/*.csproj'
-      - '**/*.props'
-      - '**/*.targets'
-      - 'Directory.Packages.props'
-      - '**/packages.lock.json'
-      - 'NuGet.config'
+  workflow_dispatch:
 
 permissions:
   contents: read

@@ -1,8 +1,8 @@
 name: Release
 
+# COST FREEZE — tag releases disabled; run manually when needed.
 on:
-  push:
-    tags: ['v*.*.*']
+  workflow_dispatch:
 
 permissions:
   contents: write

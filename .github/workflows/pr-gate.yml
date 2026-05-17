@@ -1,9 +1,8 @@
 name: PR Gate
 
+# COST FREEZE — automatic PR triggers disabled; run manually when needed.
 on:
-  pull_request:
-    types: [opened, edited, synchronize, reopened, ready_for_review]
-    branches: [main]
+  workflow_dispatch:
 
 concurrency:
   group: pr-gate-${{ github.event.pull_request.number }}

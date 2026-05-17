@@ -1,12 +1,8 @@
 name: Docs Quality
 
+# COST FREEZE — automatic PR triggers disabled; run manually when needed.
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - '**/*.md'
-      - '.markdownlint.jsonc'
-      - '.lycheeignore'
+  workflow_dispatch:
 
 concurrency:
   group: docs-quality-${{ github.event.pull_request.number }}

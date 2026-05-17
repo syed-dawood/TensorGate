@@ -1,47 +1,42 @@
+# COST FREEZE — version update PRs paused. Restore the `updates` block below when ready.
 version: 2
-updates:
-  - package-ecosystem: "nuget"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "06:00"
-    # At most one grouped minor/patch PR and one grouped major PR.
-    open-pull-requests-limit: 2
-    labels:
-      - "dependencies"
-      - "type:infrastructure"
-      - "component:ci-cd"
-    commit-message:
-      prefix: "chore(deps)"
-    groups:
-      dotnet-minors:
-        patterns:
-          - "*"
-        update-types:
-          - "minor"
-          - "patch"
-      dotnet-majors:
-        patterns:
-          - "*"
-        update-types:
-          - "major"
+updates: []
 
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "06:15"
-    # Single grouped PR for all workflow action bumps.
-    open-pull-requests-limit: 1
-    labels:
-      - "dependencies"
-      - "type:infrastructure"
-      - "component:ci-cd"
-    commit-message:
-      prefix: "chore(actions)"
-    groups:
-      github-actions:
-        patterns:
-          - "*"
+# --- restore when unfreezing ---
+# updates:
+#   - package-ecosystem: "nuget"
+#     directory: "/"
+#     schedule:
+#       interval: "weekly"
+#       day: "monday"
+#       time: "06:00"
+#     open-pull-requests-limit: 2
+#     labels:
+#       - "dependencies"
+#       - "type:infrastructure"
+#       - "component:ci-cd"
+#     commit-message:
+#       prefix: "chore(deps)"
+#     groups:
+#       dotnet-minors:
+#         patterns: ["*"]
+#         update-types: ["minor", "patch"]
+#       dotnet-majors:
+#         patterns: ["*"]
+#         update-types: ["major"]
+#   - package-ecosystem: "github-actions"
+#     directory: "/"
+#     schedule:
+#       interval: "weekly"
+#       day: "monday"
+#       time: "06:15"
+#     open-pull-requests-limit: 1
+#     labels:
+#       - "dependencies"
+#       - "type:infrastructure"
+#       - "component:ci-cd"
+#     commit-message:
+#       prefix: "chore(actions)"
+#     groups:
+#       github-actions:
+#         patterns: ["*"]

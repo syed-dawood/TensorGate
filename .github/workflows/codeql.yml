@@ -1,8 +1,8 @@
 name: CodeQL Security Analysis
 
+# COST FREEZE — automatic PR triggers disabled; run manually when needed.
 on:
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
 
 concurrency:
   group: codeql-${{ github.event.pull_request.number }}
