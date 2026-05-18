@@ -121,22 +121,16 @@ dotnet run --project src/TensorGate.Proxy
 ## Contributing
 
 Contributions are welcome. Please read the [Contributing Guidelines](CONTRIBUTING.md) before submitting a pull request.
-For operational flow and engineering runbooks, see
-[Operating Pipeline](docs/operating-pipeline.md).
-For Cursor-native agent/MCP execution strategy, see
-[Cursor Agent Ops](docs/cursor-agent-ops.md).
-For full lifecycle automation design, see
-[Phase 2 Intelligent Orchestration](docs/phase2-intelligent-orchestration.md).
-For robust local-first agentic shipping practices, see
-[Agentic Shipping Research and Playbook](docs/agentic-shipping-research-and-playbook.md).
-For requirement-to-merge evidence automation, see
-[Phase 2.3 Traceability and Evidence](docs/phase2-3-traceability-and-evidence.md).
-For 2026-specific research and next-step maturity recommendations, see
-[Agentic Development Research 2026](docs/agentic-development-research-2026.md).
-For CI minute optimization policy, see
-[Workflow Cost Optimization Policy](docs/workflow-cost-optimization.md).
-For local Composer/Chat prompt templates, see
-[Cursor Agentic Prompt Pack](docs/cursor-agentic-prompt-pack.md).
+
+Engineering runbooks in this repository:
+
+- [Operating Pipeline](docs/operating-pipeline.md) — issue/PR flow and quality gates
+- [Phase 2 Intelligent Orchestration](docs/phase2-intelligent-orchestration.md) — issue/PR workflow design
+- [Agentic Shipping Research and Playbook](docs/agentic-shipping-research-and-playbook.md) — local-first shipping practices
+- [Phase 2.3 Traceability and Evidence](docs/phase2-3-traceability-and-evidence.md) — requirement-to-merge automation
+- [Agentic Development Research 2026](docs/agentic-development-research-2026.md) — maturity recommendations
+- [Workflow Cost Optimization Policy](docs/workflow-cost-optimization.md) — CI minute policy
+- [Repository Organization](docs/repository-organization.md) — org board and automation
 
 ## License
 

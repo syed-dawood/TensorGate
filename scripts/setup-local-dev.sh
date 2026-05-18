@@ -34,7 +34,7 @@ fi
 dotnet --info | head -n 20
 
 echo "==> Restore/build preflight (bootstrap-safe)"
-chmod +x scripts/preflight.sh scripts/agentic-local-gate.sh scripts/orchestrate-change.sh 2>/dev/null || true
+chmod +x scripts/preflight.sh 2>/dev/null || true
 ./scripts/preflight.sh
 
 if ! command -v gitleaks >/dev/null 2>&1; then
@@ -56,10 +56,6 @@ else
 fi
 
 echo ""
-echo "Local agentic gate before PR:"
-echo "  ./scripts/agentic-local-gate.sh"
-echo "Issue-driven flow:"
-echo "  ./scripts/orchestrate-change.sh <issue-number>"
-echo ""
 echo "Clone path: $REPO_ROOT"
+echo "Before opening a PR: ./scripts/preflight.sh"
 echo "Done."

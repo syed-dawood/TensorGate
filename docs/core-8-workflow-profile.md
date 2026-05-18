@@ -53,5 +53,5 @@ GitHub ignores workflows in subfolders; these files are history only.
 ```bash
 cd ~/TensorGate
 ./scripts/setup-local-dev.sh
-./scripts/agentic-local-gate.sh
+./scripts/preflight.sh
 ```

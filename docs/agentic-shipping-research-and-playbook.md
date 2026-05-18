@@ -56,8 +56,9 @@ Ship high-quality changes that are "merge-ready before leaving local" by combini
 
 ```bash
 ./scripts/preflight.sh
-./scripts/agentic-local-gate.sh
 ```
+
+Maintainers using Cursor may also run the local gate in the private **TensorGate-Ops** repository.
 
 ### Stage 4: PR intelligence and review
 
@@ -73,15 +74,12 @@ Ship high-quality changes that are "merge-ready before leaving local" by combini
 - Merge only when required checks pass.
 - If regression appears, create bug issue with regression test requirement.
 
-## MCP / Tooling Roles
+## Tooling Roles
 
 - `gh` / GitHub API: source of truth for issue/PR/check state.
-- Context7: current API/docs verification.
-- Cursor subagents:
-  - `explore` for mapping
-  - `ci-investigator` for single check diagnosis
-  - `ci-watcher`/loop-on-ci for continuous CI babysitting
-  - `babysit` skill for merge-readiness loop
+- Context7 (optional): current API/docs verification during development.
+
+Cursor-specific MCP routing and Composer prompts live in the private **TensorGate-Ops** repository.
 
 ## Prompting Pattern for Agentic Tasks
 
@@ -100,7 +98,7 @@ Use this prompt shape for consistent quality:
 - [ ] Acceptance criteria are explicit and testable.
 - [ ] Risks identified with mitigation.
 - [ ] Local preflight passed.
-- [ ] Agentic local gate passed.
+- [ ] Maintainer local gate passed (TensorGate-Ops, optional).
 - [ ] Diff is minimal and reviewable.
 - [ ] PR template completed with evidence.
 
